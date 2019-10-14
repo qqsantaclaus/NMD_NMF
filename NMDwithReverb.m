@@ -75,6 +75,7 @@ end
 if usegpu
     activations = gpuArray(single(activations));
     H = gpuArray(single(H));
+end
 
 S = A(:,1:numspeechexemplars); % speech dictionary
 N = A(:,numspeechexemplars+1:end); % noise dictionary
