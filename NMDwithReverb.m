@@ -69,7 +69,7 @@ activations = ones(size(A,2), size(Z,2));
 if updateH
     rng(333);
     H = rand(size(Z,1), L);
-    H = constrainH(H,alpha1);
+    H = constrainH(H);
 end
 
 activations = gpuArray(single(activations));
