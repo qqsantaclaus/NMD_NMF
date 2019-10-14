@@ -72,9 +72,9 @@ if updateH
     H = constrainH(H);
 end
 
-activations = gpuArray(single(activations));
-H = gpuArray(single(H));
-
+if usegpu
+    activations = gpuArray(single(activations));
+    H = gpuArray(single(H));
 
 S = A(:,1:numspeechexemplars); % speech dictionary
 N = A(:,numspeechexemplars+1:end); % noise dictionary
@@ -97,10 +97,18 @@ for iter = 1 : numiter
     end
     %%%%% updates for activations
     % for speech activations
-    fnmultiplyH = @(tt) bsxfun(@times, [ratio(:,tt:end) gpuArray.zeros(B,tt-1)], H(:,tt)); % finding H and R product
+    if usegpu
+        fnmultiplyH = @(tt) bsxfun(@times, [ratio(:,tt:end) gpuArray.zeros(B,tt-1)], H(:,tt)); % finding H and R product
+    else
+        fnmultiplyH = @(tt) bsxfun(@times, [ratio(:,tt:end) zeros(B,tt-1)], H(:,tt)); % finding H and R product
+    end
     HmultipliedwithRatios = arrayfun(fnmultiplyH, 1:L, 'UniformOutput', false); % yields a 3d struct of size BxFxL
     HmultipliedwithRatios = cat(3,HmultipliedwithRatios{:}); % converting cell to mat at concatenating along the 3rd dimension (size BxFxL as above, but in matrix format)
-    fnmultiplywithS = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios(:,kk:end,:) gpuArray.zeros(B,kk-1,L)]); % multiply with transpose of S_t
+    if usegpu
+        fnmultiplywithS = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios(:,kk:end,:) gpuArray.zeros(B,kk-1,L)]); % multiply with transpose of S_t
+    else
+        fnmultiplywithS = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios(:,kk:end,:) zeros(B,kk-1,L)]); % multiply with transpose of S_t
+    end
     HRwithS = arrayfun(fnmultiplywithS, 1:T, 'UniformOutput', false); % results in a NxFxLxT where N is the number of exemplars in S (is cell struct format)
     clear HmultipliedwithRatios
     HRwithS =cat(4,HRwithS{:});
@@ -112,10 +120,18 @@ for iter = 1 : numiter
     else
         dummyones = ones(size(ratio));
     end
-    fnmultiplyH1 = @(tt) bsxfun(@times, [dummyones(:,tt:end) gpuArray.zeros(B,tt-1)], H(:,tt));
+    if usegpu
+        fnmultiplyH1 = @(tt) bsxfun(@times, [dummyones(:,tt:end) gpuArray.zeros(B,tt-1)], H(:,tt));
+    else
+        fnmultiplyH1 = @(tt) bsxfun(@times, [dummyones(:,tt:end) zeros(B,tt-1)], H(:,tt));
+    end
     HmultipliedwithRatios1 = arrayfun(fnmultiplyH1, 1:L, 'UniformOutput', false); % yields a 3d struct of size BxFxL
     HmultipliedwithRatios1 = cat(3,HmultipliedwithRatios1{:}); % converting cell to mat at concatenating along the 3rd dimension (size BxFxL as above, but in matrix format)
-    fnmultiplywithS1 = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios1(:,kk:end,:) gpuArray.zeros(B,kk-1,L)]);
+    if usegpu
+        fnmultiplywithS1 = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios1(:,kk:end,:) gpuArray.zeros(B,kk-1,L)]);
+    else
+        fnmultiplywithS1 = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios1(:,kk:end,:) zeros(B,kk-1,L)]);
+    end
     HRwithS1 = arrayfun(fnmultiplywithS1, 1:T, 'UniformOutput', false); % results in a NxFxLxT where N is the number of exemplars in S (is cell struct format)
     clear HmultipliedwithRatios1
     HRwithS1 =cat(4,HRwithS1{:});
@@ -123,11 +139,19 @@ for iter = 1 : numiter
     clear HRwithS1
     
     % for noise activations  ; uses the normal NMF updates
-    fnmultiplynumerN = @(kk) N((kk-1)*B+1: kk*B,:)'* [ratio(:,kk:end) gpuArray.zeros(B,kk-1)];
+    if usegpu
+        fnmultiplynumerN = @(kk) N((kk-1)*B+1: kk*B,:)'* [ratio(:,kk:end) gpuArray.zeros(B,kk-1)];
+    else
+        fnmultiplynumerN = @(kk) N((kk-1)*B+1: kk*B,:)'* [ratio(:,kk:end) zeros(B,kk-1)];
+    end
     numersN = arrayfun(fnmultiplynumerN, 1:T, 'UniformOutput', false);
     numersN = sum(cat(3,numersN{:}),3);
     
-    fnmultiplydenomN = @(k) N((k-1)*B+1: k*B,:)'* [dummyones(:,k:end) gpuArray.zeros(B,k-1)];
+    if usegpu
+        fnmultiplydenomN = @(k) N((k-1)*B+1: k*B,:)'* [dummyones(:,k:end) gpuArray.zeros(B,k-1)];
+    else
+        fnmultiplydenomN = @(k) N((k-1)*B+1: k*B,:)'* [dummyones(:,k:end) zeros(B,k-1)];
+    end
     denomsN = arrayfun(fnmultiplydenomN, 1:T, 'UniformOutput', false);
     denomsN = sum(cat(3,denomsN{:}),3);
     
