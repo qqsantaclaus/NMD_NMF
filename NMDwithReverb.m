@@ -29,7 +29,7 @@ function [activations,H,cost] = NMDwithReverb(Z, A, L, Lambda, numspeechexemplar
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-usegpu = 1; % should a GPU be used ? set it to 0 if GPU is not available
+usegpu = 0; % should a GPU be used ? set it to 0 if GPU is not available
 
 if lt(nargin,8)
     computecost=0;
