@@ -108,7 +108,7 @@ for iter = 1 : numiter
     if usegpu
         fnmultiplywithS = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios(:,kk:end,:) gpuArray.zeros(B,kk-1,L)]); % multiply with transpose of S_t
     else
-        fnmultiplywithS = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios(:,kk:end,:) zeros(B,kk-1,L)]); % multiply with transpose of S_t
+        fnmultiplywithS = @(kk) pagefun_mtimes(S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios(:,kk:end,:) zeros(B,kk-1,L)]); % multiply with transpose of S_t
     end
     HRwithS = arrayfun(fnmultiplywithS, 1:T, 'UniformOutput', false); % results in a NxFxLxT where N is the number of exemplars in S (is cell struct format)
     clear HmultipliedwithRatios
@@ -131,7 +131,7 @@ for iter = 1 : numiter
     if usegpu
         fnmultiplywithS1 = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios1(:,kk:end,:) gpuArray.zeros(B,kk-1,L)]);
     else
-        fnmultiplywithS1 = @(kk) pagefun(@mtimes, S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios1(:,kk:end,:) zeros(B,kk-1,L)]);
+        fnmultiplywithS1 = @(kk) pagefun_mtimes(S((kk-1)*B+1: kk*B,:)', [HmultipliedwithRatios1(:,kk:end,:) zeros(B,kk-1,L)]);
     end
     HRwithS1 = arrayfun(fnmultiplywithS1, 1:T, 'UniformOutput', false); % results in a NxFxLxT where N is the number of exemplars in S (is cell struct format)
     clear HmultipliedwithRatios1
@@ -243,4 +243,13 @@ end
 % normalise rows for additive bound
 H = bsxfun(@rdivide, H, sum(H,2));
 
+end
+
+
+% A is of (M, N), B is of (N, P, Q)
+function [C]=pagefun_mtimes(A, B)
+    C = zeros(size(A)(0), size(B)(1), size(B)(2))
+    for i = 1: size(C)(2)
+        C(:, :, i) = mtimes(A, B(:, :, i))
+    endfor
 end
