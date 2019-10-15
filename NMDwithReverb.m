@@ -245,11 +245,14 @@ H = bsxfun(@rdivide, H, sum(H,2));
 
 end
 
-
 % A is of (M, N), B is of (N, P, Q)
 function [C]=pagefun_mtimes(A, B)
-    C = zeros(size(A)(0), size(B)(1), size(B)(2))
-    for i = 1: size(C)(2)
+    N = size(A)(0)
+    P = size(B)(1)
+    Q = size(B)(2)
+    
+    C = zeros(N, P, Q)
+    for i = 1:Q
         C(:, :, i) = mtimes(A, B(:, :, i))
-    endfor
+    end
 end
