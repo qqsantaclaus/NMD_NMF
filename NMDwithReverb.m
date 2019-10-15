@@ -247,11 +247,11 @@ end
 
 % A is of (M, N), B is of (N, P, Q)
 function [C]=pagefun_mtimes(A, B)
-    [N, ~] = size(A)
-    [P, Q] = size(B)
+    [N, ~] = size(A);
+    [P, Q] = size(B);
     
-    C = zeros(N, P, Q)
+    C = zeros(N, P, Q);
     for i = 1:Q
-        C(:, :, i) = mtimes(A, B(:, :, i))
+        C(:, :, i) = mtimes(A, B(:, :, i));
     end
 end
